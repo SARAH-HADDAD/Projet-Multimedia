@@ -1,113 +1,141 @@
 import cv2
 import numpy as np
 import math
-"""
-La fonction MSE (Mean Squared Error) calcule l'erreur quadratique moyenne entre deux blocs d'images. 
-Elle est utilisée ici pour mesurer la similitude entre deux blocs en comparant les valeurs de pixel de chaque bloc. 
-Plus l'erreur quadratique moyenne est faible, plus les deux blocs sont similaires.
-"""
+
+# Compute the mean squared error (MSE) between two blocks of images
 def MSE(block1, block2):
+    # Calculate the sum of the squared differences between the pixel values of the two blocks
+    # and divide it by the number of pixels to get the mean squared error
     return np.sum((block1.astype("float") - block2.astype("float")) ** 2) / float(block1.shape[0] * block1.shape[1])
 
-def search(bloc1,searchBox,searchImg,bloc_width,bloc_height):
+# Search for the most similar block in the second image within a specified search box around the
+# block being compared in the first image
+def search(block1, search_box, search_img, block_width, block_height):
+    # Initialize the minimum MSE to a large value
     mse = +math.inf
-    maxX = (searchBox[1][0] - bloc_width) + 1
-    maxY = (searchBox[1][1] - bloc_height)+ 1
-    box2_coordinates = None
+    # Calculate the maximum x and y coordinates that the right bottom corner of the block
+    # being compared in the first image can have within the search box
+    max_x = (search_box[1][0] - block_width) + 1
+    max_y = (search_box[1][1] - block_height)+ 1
+    # Initialize the coordinates of the most similar block in the second image to None
+    block2_coordinates = None
 
-    for y in range(searchBox[0][1],maxY):
-        for x in range(searchBox[0][0],maxX):
-                bloc2 = searchImg[y:y+bloc_height,x:x+bloc_width]
-                temp = MSE(bloc1,bloc2)
+    # Loop through all the blocks within the search box
+    for y in range(search_box[0][1], max_y):
+        for x in range(search_box[0][0], max_x):
+                # Get the current block in the second image
+                block2 = search_img[y:y+block_height, x:x+block_width]
+                # Calculate the MSE between the current block in the second image and the block
+                # being compared in the first image
+                temp = MSE(block1, block2)
+                # If the MSE is smaller than the current minimum MSE, update the minimum MSE and
+                # the coordinates of the most similar block in the second image
                 if temp < mse:
                     mse = temp
-                    box2_coordinates=[(x,y),(x+bloc_width,y+bloc_height)]
-    return box2_coordinates
+                    block2_coordinates = [(x, y), (x+block_width, y+block_height)]
+    # Return the coordinates of the most similar block in the second image
+    return block2_coordinates
 
-def SearchBox(coordinates,width,height,span):
-
-    if coordinates[0][0] < span : topLeftX = 0
-    elif coordinates[0][0] > width - span : topLeftX = width - span
-    else : topLeftX = coordinates[0][0] - span
-
-    if coordinates[0][1] < span : topLeftY = 0
-    elif coordinates[0][1] > height - span : topLeftY = height - span
-    else : topLeftY = coordinates[0][1] - span
-
-    if coordinates[1][0] > width - span : bottomRightX = width
-    else : bottomRightX = coordinates[1][0] + span
-
-    if coordinates[1][1] > height - span : bottomRightY = height
-    else : bottomRightY = coordinates[1][1] + span
-
-    return [(topLeftX,topLeftY),(bottomRightX,bottomRightY)]
+# Define the search box around a block as a span around the block
+# Define the search box around a block as a span around the block
+def search_box(coordinates, width, height, span):
+    # If the top left x coordinate of the block is within span pixels from the left edge of the image,
+    # set the top left x coordinate of the search box to 0
+    # Otherwise, if it is within span pixels from the right edge of the image, set it to the width minus span
+    # Otherwise, set it to the top left x coordinate minus span
+    if coordinates[0][0] < span:
+        top_left_x = 0
+    elif coordinates[0][0] > width - span:
+        top_left_x = width - span
+    else:
+        top_left_x = coordinates[0][0] - span
+        
+    # If the top left y coordinate of the block is within span pixels from the top edge of the image,
+    # set the top left y coordinate of the search box to 0
+    # Otherwise, if it is within span pixels from the bottom edge of the image, set it to the height minus span
+    # Otherwise, set it to the top left y coordinate minus span
+    if coordinates[0][1] < span:
+        top_left_y = 0
+    elif coordinates[0][1] > height - span:
+        top_left_y = height - span
+    else:
+        top_left_y = coordinates[0][1] - span
     
-
-def draw_greenBox(img,coordinates):
+    # If the bottom right x coordinate of the block is within span pixels from the right edge of the image,
+    # set the bottom right x coordinate of the search box to the width of the image
+    # Otherwise, set it to the bottom right x coordinate plus span
+    if coordinates[1][0] > width - span:
+        bottom_right_x = width
+    else:
+        bottom_right_x = coordinates[1][0] + span
+        
+    # If the bottom right y coordinate of the block is within span pixels from the bottom edge of the image,
+   
+def draw_green_box(img,coordinates):
     if coordinates is not None:
         cv2.rectangle(img, 
         (coordinates[0][0], coordinates[0][1]), 
         (coordinates[1][0], coordinates[1][1]), 
         (0 , 255, 0), 2)
 
-def draw_redBox(img,coordinates):
+def draw_red_box(img,coordinates):
     if coordinates is not None:
         cv2.rectangle(img, 
         (coordinates[0][0], coordinates[0][1]), 
         (coordinates[1][0], coordinates[1][1]), 
         (0, 0, 255), 2)
+def main():
+    # Set the block size to 32x32 pixels
+    block_width, block_height = 32, 32
+    # Set the MSE threshold to 50
+    seuil = 50
+    # Set the span around the block to search in to 100 pixels
+    span = 100
 
+    # Read the first image
+    image1 = "images/image072.png"
+    img1 = cv2.imread(image1)
 
-bloc_width,bloc_height = 32,32
-bloc_width,bloc_height = 32,32
-seuil = 50
-span = 100
+    # Read the second image
+    image2 = "images/image092.png"
+    img2 = cv2.imread(image2)
 
-image1 = "images/image092.png"
-image2 = "images/image072.png"
+    # Convert the images to the XYZ color space
+    img1_xyz = cv2.cvtColor(img1, cv2.COLOR_BGR2XYZ)
+    img2_xyz = cv2.cvtColor(img2, cv2.COLOR_BGR2XYZ)
 
+    # Extract the X channel from the images
+    img1_x = img1_xyz[:,:,0]
+    img2_x = img2_xyz[:,:,0]
 
-img1 = cv2.imread(image1)
-img2 = cv2.imread(image2)
+    # Get the width and height of the images
+    width = img1_x.shape[1]
+    height = img1_x.shape[0]
 
+    # Divide the first image into blocks of size block_width x block_height
+    for y in range(0, height, block_height):
+        for x in range(0, width, block_width):
+            # Get the current block in the first image
+            block1 = img1_x[y:y+block_height, x:x+block_width]
+            # Define the search box around the block in the second image
+            search_box_coords = search_box([(x, y), (x+block_width, y+block_height)], width, height, span)
+            # Search for the most similar block within the search box in the second image
+            block2_coords = search(block1, search_box_coords, img2_x, block_width, block_height)
+            # Calculate the MSE between the two blocks
+            mse = MSE(block1, img2_x[block2_coords[0][1]:block2_coords[1][1], block2_coords[0][0]:block2_coords[1][0]])
+            # If the MSE is greater than the threshold, draw red and green boxes around the blocks
+            # in the first and second images, respectively
+            if mse > seuil:
+                draw_red_box(img1, [(x, y), (x+block_width, y+block_height)])
+                draw_green_box(img2, block2_coords)
 
-a = cv2.cvtColor(img1, cv2.COLOR_BGR2XYZ)
-#this notation will give you all values in column 0 (from all rows)
-a = a[:,:,0]
+    # Show the first and second images with the boxes drawn around the blocks
+    cv2.imshow("Image 1", img1)
+    cv2.imshow("Image 2", img2)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
 
-b = cv2.cvtColor(img2, cv2.COLOR_BGR2XYZ)
-b = b[:,:,0]
+if __name__ == "__main__":
+    main()
 
-
-width = a.shape[1]
-height = a.shape[0]
-print(a.shape[1]) 
-print(b.shape[1]) 
-print(a.shape[0]) 
-print(b.shape[0]) 
-
-# Deviser l’image 1 en bloc de 32x32 px:
-maxX = width - (width % bloc_height)
-maxY = height- (height % bloc_height)
-
-for y in range (0,maxY,bloc_height):
-    for x in range(0,maxX,bloc_width):
-        topLeftX = x
-        topLeftY = y
-        bottomRightX = x+bloc_width
-        bottomRightY = y+bloc_height
-        bloc1 = a[topLeftY:bottomRightY,topLeftX:bottomRightX]
-        bloc2 = b[topLeftY:bottomRightY,topLeftX:bottomRightX]
-        # Si l'MSE entre un bloc de la première image et un bloc de la deuxième image est inférieur à un seuil spécifié (50 ici),
-        # le code dessine une boîte verte autour du bloc similaire dans la deuxième image 
-        # et une boîte rouge autour du bloc de la première image.
-        if seuil < MSE(bloc1,bloc2):
-            coordinates = [(topLeftX,topLeftY),(bottomRightX,bottomRightY)]
-            draw_redBox(img1,coordinates)
-            searchBox = SearchBox(coordinates,width,height,span)
-            greenBox = search(bloc1,searchBox,b,bloc_width,bloc_height)
-            draw_greenBox(img2,greenBox)
-cv2.imshow("Affichager les Blocks similaire dans l'image 1", img1) 
-cv2.imshow("Affichager les Blocks similaire dans l'image 2", img2) 
-cv2.waitKey(0)
-print("Test")
+   
