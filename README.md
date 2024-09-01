@@ -1,7 +1,7 @@
 ## Description
 
-Ce code permet de détecter les changements dans les frames d'une vidéo en utilisant une technique de comparaison de blocs. Il utilise une méthode de recherche dichotomique pour optimiser les performances.
+This code detects changes in video frames using a block comparison technique. It employs a binary search method to optimize performance.
 
-Le code divisera la frame en blocs de la taille définie, puis recherchera dans un voisinage de taille kxk le bloc similaire et calculera le résidu. Les blocs similaires seront encadrés d'un carré de la couleur définie, et l'image des résidus sera affichée. Si un bloc n'a pas changé, il sera affiché comme un rectangle noir.
+The code will divide the frame into blocks of the defined size, then search for the similar block within a kxk neighborhood and calculate the residue. Similar blocks will be highlighted with a square of the defined color, and the residue image will be displayed. If a block hasn't changed, it will be shown as a black rectangle.
 
-La recherche dichotomique est utilisée pour optimiser les performances de la détection des changements. Un document de référence est également fourni pour une consultation supplémentaire.
+Binary search is used to optimize the performance of change detection. A reference document is also provided for further consultation.
